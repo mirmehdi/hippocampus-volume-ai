@@ -3,6 +3,7 @@ This file contains code that will kick off training and testing processes
 """
 import os
 import json
+import numpy as np
 
 from experiments.UNetExperiment import UNetExperiment
 from data_prep.HippocampusDatasetLoader import LoadHippocampusData
@@ -13,12 +14,13 @@ class Config:
     """
     def __init__(self):
         self.name = "Basic_unet"
-        self.root_dir = r"YOUR DIRECTORY HERE"
+        self.root_dir = "../../section1/out"
         self.n_epochs = 10
         self.learning_rate = 0.0002
         self.batch_size = 8
         self.patch_size = 64
-        self.test_results_dir = "RESULTS GO HERE"
+        self.test_results_dir = "../out"
+        self.smoke_test = False     # True = quick test (20 patients, 1 epoch); False = real training
 
 if __name__ == "__main__":
     # Get configuration
@@ -32,6 +34,12 @@ if __name__ == "__main__":
 
     # TASK: LoadHippocampusData is not complete. Go to the implementation and complete it. 
     data = LoadHippocampusData(c.root_dir, y_shape = c.patch_size, z_shape = c.patch_size)
+        # Smoke test: use only 20 patients and 1 epoch, so the whole pipeline runs in a few minutes
+    if c.smoke_test:
+        data = data[:20]
+        c.n_epochs = 5
+        print("SMOKE TEST MODE: 20 patients, 5 epoch")
+
 
 
     # Create test-train-val split
@@ -45,10 +53,26 @@ if __name__ == "__main__":
 
     split = dict()
 
-    # TASK: create three keys in the dictionary: "train", "val" and "test". In each key, store
+    # create three keys in the dictionary: "train", "val" and "test". In each key, store
     # the array with indices of training volumes to be used for training, validation 
     # and testing respectively.
-    # <YOUR CODE GOES HERE>
+    
+    # a. shuffle the patinet numbers (0...259). fixed seed
+    np.random.seed(42)
+    keys = np.random.permutation(len(data))
+
+    # b. sizes: 60% train, 20% val 20% test
+    n_train = int(len(data) * 0.6)
+    n_val = int(len(data) * 0.2)
+
+    # c. cut the shuffled array into three parts and every patient is exatly One Part --> no leackage
+    split["train"] = keys[:n_train]
+    split["val"] = keys[n_train:n_train+n_val]
+    split["test"] = keys[n_train+n_val:]
+
+    print(f"Train: {len(split['train'])}, Val: {len(split['val'])}, Test: {len(split['test'])}")
+
+
 
     # Set up and run experiment
     

@@ -74,3 +74,26 @@ def Jaccard3d(a, b):
 
     # 4. Jaccard = intersection / union
     return float(intersection / union)
+
+def Sensitivity3d(gt, pred):
+    """True positive rate: share of TRUE hippocampus voxels that the model found.
+    Low value = under-segmentation (missed parts, volume too small)."""
+    gt_bin = gt > 0
+    pred_bin = pred > 0
+    tp = np.sum(gt_bin & pred_bin)        # true positives: hippocampus, and found
+    fn = np.sum(gt_bin & ~pred_bin)       # false negatives: hippocampus, but missed (~ = NOT)
+    if tp + fn == 0:
+        return 1.0
+    return float(tp / (tp + fn))
+
+
+def Specificity3d(gt, pred):
+    """True negative rate: share of BACKGROUND voxels that the model left alone.
+    Low value = over-segmentation (extra areas painted, volume too big)."""
+    gt_bin = gt > 0
+    pred_bin = pred > 0
+    tn = np.sum(~gt_bin & ~pred_bin)      # true negatives: background, and left alone
+    fp = np.sum(~gt_bin & pred_bin)       # false positives: background, but painted
+    if tn + fp == 0:
+        return 1.0
+    return float(tn / (tn + fp))

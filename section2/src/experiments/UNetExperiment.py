@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from data_prep.SlicesDataset import SlicesDataset
 from utils.utils import log_to_tensorboard
-from utils.volume_stats import Dice3d, Jaccard3d
+from utils.volume_stats import Dice3d, Jaccard3d, Sensitivity3d, Specificity3d
 from networks.RecursiveUNet import UNet
 from inference.UNetInferenceAgent import UNetInferenceAgent
 
@@ -232,6 +232,8 @@ class UNetExperiment:
         out_dict["volume_stats"] = []
         dc_list = []
         jc_list = []
+        sens_list = []     
+        spec_list = []
 
         # for every in test set
         for i, x in enumerate(self.test_data):
@@ -252,6 +254,13 @@ class UNetExperiment:
             dc_list.append(dc)
             jc_list.append(jc)
 
+            sens = Sensitivity3d(x["seg"], pred_label)
+            spec = Specificity3d(x["seg"], pred_label)
+            sens_list.append(sens)
+            spec_list.append(spec)
+
+
+
             # STAND-OUT SUGGESTION: By way of exercise, consider also outputting:
             # * Sensitivity and specificity (and explain semantic meaning in terms of 
             #   under/over segmenting)
@@ -261,13 +270,18 @@ class UNetExperiment:
             out_dict["volume_stats"].append({
                 "filename": x['filename'],
                 "dice": dc,
-                "jaccard": jc
+                "jaccard": jc,
+                "sensitivity": sens,
+                "specificity": spec
                 })
             print(f"{x['filename']} Dice {dc:.4f}. {100*(i+1)/len(self.test_data):.2f}% complete")
 
+    
         out_dict["overall"] = {
             "mean_dice": np.mean(dc_list),
-            "mean_jaccard": np.mean(jc_list)}
+            "mean_jaccard": np.mean(jc_list),
+            "mean_sensitivity": np.mean(sens_list),
+            "mean_specificity": np.mean(spec_list)}
 
         print("\nTesting complete.")
         return out_dict
