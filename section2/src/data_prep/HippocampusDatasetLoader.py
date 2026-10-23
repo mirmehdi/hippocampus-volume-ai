@@ -7,6 +7,7 @@ from os.path import isfile, join
 
 import numpy as np
 from medpy.io import load
+import nibabel as nib
 
 from utils.utils import med_reshape
 
@@ -35,11 +36,11 @@ def LoadHippocampusData(root_dir, y_shape, z_shape):
         # We would benefit from mmap load method here if dataset doesn't fit into memory
         # Images are loaded here using MedPy's load method. We will ignore header 
         # since we will not use it
-        image, _ = load(os.path.join(image_dir, f))
-        label, _ = load(os.path.join(label_dir, f))
+        image = nib.load(os.path.join(image_dir, f)).get_fdata()
+        label = nib.load(os.path.join(label_dir, f)).get_fdata()
 
         # TASK: normalize all images (but not labels) so that values are in [0..1] range
-        # <YOUR CODE GOES HERE>
+        image = image / np.max(image)
 
         # We need to reshape data since CNN tensors that represent minibatches
         # in our case will be stacks of slices and stacks need to be of the same size.
@@ -53,7 +54,10 @@ def LoadHippocampusData(root_dir, y_shape, z_shape):
         label = med_reshape(label, new_shape=(label.shape[0], y_shape, z_shape)).astype(int)
 
         # TASK: Why do we need to cast label to int?
-        # ANSWER: 
+        # ANSWER: med_reshape returns floats (np.zeros creates float64), but labels are
+        # class IDs (0, 1, 2), not measurements. The loss function (CrossEntropyLoss)
+        # needs whole-number class indices as targets, and integer labels make
+        # comparisons like label == 1 exact (no 0.9999 float errors).
 
         out.append({"image": image, "seg": label, "filename": f})
 

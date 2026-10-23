@@ -47,7 +47,21 @@ class SlicesDataset(Dataset):
         # and the slice number are in the slc variable. 
         # Hint2: You can use None notation like so: arr[None, :] to add size-1 
         # dimension to a Numpy array
-        # <YOUR CODE GOES HERE>
+            # TASK: Create two new keys in the "sample" dictionary, named "image" and "seg" ...
+
+        # 1. The address: i = which patient, j = which slice
+        i, j = slc
+
+        # 2. Take slice j of patient i -> shape (64, 64)
+        image_slice = self.data[i]["image"][j]
+        seg_slice = self.data[i]["seg"][j]
+
+        # 3 + 4. Add the channel dimension (64,64) -> (1,64,64) and convert numpy -> Torch tensor
+        # 5. Store under the names that UNetExperiment uses: batch["image"], batch["seg"]
+        sample["image"] = torch.from_numpy(image_slice[None, :])
+        sample["seg"] = torch.from_numpy(seg_slice[None, :])
+
+
 
         return sample
 

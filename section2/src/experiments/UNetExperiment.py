@@ -58,7 +58,14 @@ class UNetExperiment:
         # Do we have CUDA available?
         if not torch.cuda.is_available():
             print("WARNING: No CUDA device is found. This may take significantly longer!")
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                # NVIDIA GPU if available, else Apple Silicon GPU (MPS), else CPU
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
+        print("Using device:", self.device)
 
         # Configure our model and other training implements
         # We will use a recursive UNet model from German Cancer Research Center, 
@@ -97,8 +104,8 @@ class UNetExperiment:
             # shape [BATCH_SIZE, 1, PATCH_SIZE, PATCH_SIZE] into variables data and target. 
             # Feed data to the model and feed target to the loss function
             # 
-            # data = <YOUR CODE HERE>
-            # target = <YOUR CODE HERE>
+            data = batch["image"].to(self.device,dtype=torch.float) # images → device, float32
+            target = batch["seg"].to(self.device,dtype=torch.long) # labels → device, whole numbers
 
             prediction = self.model(data)
 
@@ -109,7 +116,10 @@ class UNetExperiment:
             loss = self.loss_function(prediction, target[:, 0, :, :])
 
             # TASK: What does each dimension of variable prediction represent?
-            # ANSWER:
+            # ANSWER: prediction has shape [BATCH_SIZE, 3, 64, 64]:
+            #   dim 0 = which slice in the batch, dim 1 = score for each class
+            #   (0 background, 1 anterior, 2 posterior), dims 2-3 = pixel rows and columns.
+            #   argmax over dim 1 gives the predicted class per pixel.
 
             loss.backward()
             self.optimizer.step()
@@ -153,7 +163,11 @@ class UNetExperiment:
             for i, batch in enumerate(self.val_loader):
                 
                 # TASK: Write validation code that will compute loss on a validation sample
-                # <YOUR CODE HERE>
+                data = batch["image"].to(self.device,dtype=torch.float) # images → device, float32
+                target = batch["seg"].to(self.device).long()  # labels → device
+                prediction = self.model(data)
+                prediction_softmax = F.softmax(prediction, dim=1)
+                loss = self.loss_function(prediction, target[:, 0, :, :])
 
                 print(f"Batch {i}. Data shape {data.shape} Loss {loss}")
 

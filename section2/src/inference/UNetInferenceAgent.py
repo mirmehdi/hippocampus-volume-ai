@@ -59,6 +59,19 @@ class UNetInferenceAgent:
         # that, put all slices into a 3D Numpy array. You can verify if your method is 
         # correct by running it on one of the volumes in your training set and comparing 
         # with the label in 3D Slicer.
-        # <YOUR CODE HERE>
+        mask3d = np.zeros(volume.shape, dtype=np.uint8)
 
-        return # 
+        for slice_index in range(volume.shape[0]):
+            # 1. one slice (64, 64) -> tensor [1, 1, 64, 64] (batch, channel, H, W), float32, on device
+            slice_2d = volume[slice_index, :, :]
+            slice_2d = torch.from_numpy(slice_2d).unsqueeze(0).unsqueeze(0).float().to(self.device)
+
+            # 2. predict without learning; argmax over the class dim -> (64, 64) mask with 0/1/2
+            with torch.no_grad():
+                prediction = self.model(slice_2d)
+                predicted_mask = torch.argmax(prediction, dim=1).squeeze(0).cpu().numpy()
+
+            # 3. put this slice's mask into the 3D mask
+            mask3d[slice_index, :, :] = predicted_mask
+
+        return mask3d
