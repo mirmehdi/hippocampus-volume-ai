@@ -14,17 +14,13 @@ Input: the 260 curated image/label pairs from Section 1 (`../section1/out`).
 | Mean specificity | 0.998 |
 | Training | 10 epochs, 37 min on Apple Silicon GPU (MPS) |
 
-Per-patient scores and the full configuration are in [`out/<run>/results.json`](out/).
+Per-patient scores and the full configuration are in [`2026-10-23_1156_Basic_unet/results.json`](2026-10-23_1156_Basic_unet/results.json).
 
 ## Training curves and predictions
 
-| Loss (train and validation) |
-|---|
-| ![Loss](out/tensorboard_loss.png) |
-
 | Step 0 | Step 500 | Step 999 |
 |---|---|---|
-| ![step 0](out/tensorboard_step0.png) | ![step 500](out/tensorboard_step500.png) | ![step 999](out/tensorboard_step999.png) |
+| ![step 0](tensorboard_step0.png) | ![step 500](tensorboard_step500.png) | ![step 999](tensorboard_step999.png) |
 
 Each screenshot shows the ground-truth mask, the predicted mask and the probability map. Train and validation loss stay close together, so there's no meaningful overfitting. Most of the learning happens in the first 2–3 epochs.
 
@@ -62,7 +58,7 @@ From this folder (`section2/`), with the environment from the main README:
 
 ```bash
 cd src
-python run_ml_pipeline.py          # loads data, splits, trains, tests, writes out/<run>/results.json
+python run_ml_pipeline.py          # loads data, splits, trains, tests, writes ../out/<run>/results.json
 tensorboard --logdir runs          # in a second terminal: training curves and images
 ```
 
@@ -73,7 +69,7 @@ In `run_ml_pipeline.py` → `Config`:
 
 The device is picked automatically: CUDA, then Apple MPS, then CPU.
 
-Model weights (`model.pth`, ~124 MB) are not tracked in git; see the repository's **Releases** page.
+Model weights (`model.pth`, ~124 MB) are not tracked in git; they are available on request.
 
 ## Code structure
 
